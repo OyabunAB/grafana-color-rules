@@ -20,8 +20,7 @@ jobs:
           persist-credentials: false
 
       - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.0
-        env:
-          SIGN_ROOT_URLS: https://grafana.oyabun.se
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          sign_root_urls: https://grafana.oyabun.se
           attestation: true
