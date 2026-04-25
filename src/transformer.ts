@@ -72,7 +72,7 @@ function applyOverrides(frames: DataFrame[], options: ColorRulesTransformOptions
 }
 
 export const colorRulesTransformer: SynchronousDataTransformerInfo<ColorRulesTransformOptions> = {
-  id: 'color-rules',
+  id: 'oyabun-color-rules',
   name: 'Color Rules',
   description: 'Assign consistent colors to series using regex capture groups. Series sharing the same captured value share a color.',
   defaultOptions: { colorRules: [] },
