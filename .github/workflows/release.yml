@@ -11,15 +11,17 @@ jobs:
   release:
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.0.2
+      - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.0
+        env:
+          SIGN_ROOT_URLS: https://grafana.oyabun.se
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
-          root_urls: https://grafana.oyabun.se
-          # If using a legacy API key instead of an access policy token:
-          # grafana_token: ${{ secrets.GRAFANA_API_KEY }}
+          attestation: true
