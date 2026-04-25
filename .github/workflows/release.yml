@@ -20,5 +20,6 @@ jobs:
       - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.0.2
         with:
           policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+          root_urls: https://grafana.oyabun.se
           # If using a legacy API key instead of an access policy token:
           # grafana_token: ${{ secrets.GRAFANA_API_KEY }}
