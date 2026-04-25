@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/v11.5.2/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
   "name": "Color Rules",
-  "id": "oyabunab-color-rules-app",
+  "id": "oyabunab-colorrules-app",
   "info": {
     "keywords": ["app", "transform", "color"],
     "description": "Assigns consistent colors to series using regex capture groups.",
