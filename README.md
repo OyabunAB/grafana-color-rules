@@ -1,30 +1,41 @@
-# oyabun-colorrules-panel
+# Color Rules
 
-Grafana panel plugin that assigns consistent colors to time series based on regex capture groups, and lets you control line style per matched value.
+A Grafana app plugin that provides deterministic, consistent series coloring across panels — via a dedicated **Color Rules** color scheme and a regex-based data transformer.
 
-The problem it solves: Grafana's `palette-classic-by-name` assigns colors by series name, so `node1 rx` and `node1 tx` get different colors even though they belong to the same node. This plugin lets you define that the color key is the `node` capture group, and that `tx` series should render dashed.
+## Features
 
-## How it works
+- **Color Rules color scheme** — Select *Color Rules* in any panel's Standard options → Color scheme. Series names are hashed deterministically to the Color Rules palette: the same name always maps to the same color, across every panel and dashboard.
+- **Color Rules transformer** — Define regex rules for group-based coloring. Series sharing the same captured group value share a color. Add line style overrides to visually distinguish series within a group, e.g. `rx` solid / `tx` dashed.
 
-You define rules. Each rule has:
+## Usage
 
-- **Name pattern** — a regex applied to each series display name
-- **Color group** — a named capture group (or positional index) whose value determines the color. Series sharing the same value here share a color.
-- **Line style overrides** — map a captured value to solid or dashed
+### Color scheme only
 
-Example: pattern `^(?<node>\S+) (rx|tx)$`, color group `node`, line style override on capture group `2` matching `tx` → dashed. Result: all series from the same node get the same color, rx is solid, tx is dashed.
+1. Edit a panel.
+2. Standard options → Color scheme → **Color Rules**.
 
-Colors come from the Grafana theme palette so dark/light mode works correctly.
+Series names are hashed to the Color Rules palette. No further configuration required.
 
-## Building
+### With transformer
+
+1. Standard options → Color scheme → **Color Rules**.
+2. Transform tab → Add transformation → **Color Rules**.
+3. Add a rule:
+   - **Name pattern**: regex applied to each series display name, e.g. `^(?<node>\S+) (rx|tx)$`
+   - **Color group**: capture group name or 0-based index whose value drives color assignment, e.g. `node` — all series with the same captured value share a color
+   - Optionally click a swatch to pin the rule to a specific palette color instead of hash-based assignment
+4. Optionally add **line style overrides** to visually distinguish series within the same color group, e.g. make `tx` a dashed line.
+
+## Development
 
 ```bash
 npm install
-npm run build   # production
-npm run dev     # watch mode
-npm run server  # starts Grafana via Docker with the plugin loaded
+npm run build      # production build
+npm run dev        # watch mode
+npm run server     # start Grafana via Docker with the plugin loaded
+npm test           # run unit tests
 ```
 
-## Installation
+## Requirements
 
-Copy `dist/` into your Grafana plugin directory and restart Grafana. No signing required for private use.
+Grafana ≥ 11.5.0

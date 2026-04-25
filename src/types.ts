@@ -13,13 +13,15 @@
 // limitations under the License.
 
 export interface LineStyleRule {
-  /** Named capture group name or 1-based positional index */
+  id: string;
+  /** Named capture group name or 0-based positional index (0 = full match, 1 = first group) */
   captureGroup: string;
+  /** The captured value that must match for this override to apply */
   matchValue: string;
   style: 'solid' | 'dash';
   /** [dashLen, gapLen]. Defaults to [6, 3] */
   dash?: [number, number];
-  /** 0 = no fill. Defaults to 0 for dash */
+  /** Fill opacity, 0–1. Defaults to 0 for dash */
   opacity?: number;
 }
 
@@ -29,12 +31,23 @@ export interface ColorRule {
   /** Regex applied to each series display name, e.g. "^(?<node>\\S+) (rx|tx)$" */
   namePattern: string;
   /**
-   * Named capture group (or 1-based index) whose value drives color assignment.
-   * All series with the same value here share a color.
+   * Named capture group name or 0-based positional index whose value drives color
+   * assignment. All series with the same captured value share a color.
    * Leave empty to key on the full match.
    */
   colorGroup: string;
   /** Explicit hex color from the palette. Overrides hash-based assignment when set. */
   color?: string;
-  lineStyles: LineStyleRule[];
+  lineStyles?: LineStyleRule[];
 }
+
+export interface SeriesColorOverride {
+  seriesName: string;
+  color: string;
+  lineStyle?: 'solid' | 'dash';
+  dash?: [number, number];
+  fillOpacity?: number;
+}
+
+/** Default dash pattern used when no explicit dash is configured */
+export const DEFAULT_DASH: [number, number] = [6, 3];

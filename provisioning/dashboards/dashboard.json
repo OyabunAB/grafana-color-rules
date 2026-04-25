@@ -1,104 +1,72 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
+  "title": "Color Rules example",
+  "uid": "colorrules-example",
   "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 1,
-  "links": [],
-  "liveNow": false,
+  "schemaVersion": 39,
   "panels": [
     {
-      "datasource": {
-        "type": "grafana-testdata-datasource",
-        "uid": "trlxrdZVk"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
       "id": 1,
-      "options": {
-        "seriesCountSize": "sm",
-        "showSeriesCount": false,
-        "text": "Default value of text input option"
+      "type": "timeseries",
+      "title": "Example — same node, rx solid / tx dashed",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-testdata-datasource", "uid": "-- Grafana --" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "colorrules" }
+        }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "grafana-testdata-datasource",
-            "uid": "db84e60d-b92a-4089-82cb-34842fb1754b"
-          },
           "refId": "A",
-          "scenarioId": "raw_frame",
-          "rawFrameContent": "[\n  {\n    \"columns\": [\n      {\n        \"text\": \"Time\",\n        \"type\": \"time\"\n      },\n      {\n        \"text\": \"Label\",\n        \"type\": \"string\"\n      },\n      {\n        \"text\": \"Value\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [1609459200000, \"A\", 10],\n      [1609462800000, \"B\", 20],\n      [1609466400000, \"C\", 15],\n      [1609470000000, \"D\", 25],\n      [1609473600000, \"E\", 30]\n    ]\n  },\n{\n    \"columns\": [\n      {\n        \"text\": \"Time\",\n        \"type\": \"time\"\n      },\n      {\n        \"text\": \"Label\",\n        \"type\": \"string\"\n      },\n      {\n        \"text\": \"Value\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [1609459200000, \"A\", 40],\n      [1609462800000, \"B\", 50],\n      [1609466400000, \"C\", 45],\n      [1609470000000, \"D\", 55],\n      [1609473600000, \"E\", 60]\n    ]\n  }\n]"
-        }
-      ],
-      "title": "Sample Panel Title",
-      "type": "oyabun-colorrules-panel"
-    },
-    {
-      "datasource": {
-        "type": "grafana-testdata-datasource",
-        "uid": "trlxrdZVk"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 2,
-      "options": {
-        "seriesCountSize": "sm",
-        "showSeriesCount": false,
-        "text": "Default value of text input option"
-      },
-      "targets": [
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "-- Grafana --" },
+          "scenarioId": "random_walk",
+          "alias": "node1 rx"
+        },
         {
-          "alias": "",
-          "datasource": {
-            "type": "grafana-testdata-datasource",
-            "uid": "db84e60d-b92a-4089-82cb-34842fb1754b"
-          },
-          "refId": "A",
-          "scenarioId": "no_data_points"
+          "refId": "B",
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "-- Grafana --" },
+          "scenarioId": "random_walk",
+          "alias": "node1 tx"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "-- Grafana --" },
+          "scenarioId": "random_walk",
+          "alias": "node2 rx"
+        },
+        {
+          "refId": "D",
+          "datasource": { "type": "grafana-testdata-datasource", "uid": "-- Grafana --" },
+          "scenarioId": "random_walk",
+          "alias": "node2 tx"
         }
       ],
-      "title": "Sample Panel Title",
-      "type": "oyabun-colorrules-panel"
+      "transformations": [
+        {
+          "id": "color-rules",
+          "options": {
+            "colorRules": [
+              {
+                "id": "example",
+                "namePattern": "^(?<node>\\S+) (rx|tx)$",
+                "colorGroup": "node",
+                "lineStyles": [
+                  {
+                    "id": "tx-dash",
+                    "captureGroup": "2",
+                    "matchValue": "tx",
+                    "style": "dash",
+                    "dash": [6, 3],
+                    "opacity": 0
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ],
-  "refresh": "",
-  "schemaVersion": 39,
-  "tags": [],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "",
-  "title": "Provisioned Color Rules dashboard",
-  "uid": "a538aeff-5a8a-42a5-901c-938d896fdd6f",
-  "version": 1,
-  "weekStart": ""
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "5s"
 }

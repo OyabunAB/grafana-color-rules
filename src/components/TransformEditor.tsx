@@ -16,21 +16,18 @@ import React from 'react';
 import { TransformerUIProps } from '@grafana/data';
 import { ColorRulesTransformOptions } from '../transformer';
 import { ColorRulesEditor } from './ColorRulesEditor';
-import { PALETTE_PRESETS } from '../palettes';
-
-const COLOR_MODE_ID = 'colorrules';
+import { COLORRULES_PALETTE } from '../palettes';
 
 export const ColorRulesTransformEditor: React.FC<TransformerUIProps<ColorRulesTransformOptions>> = ({
   options,
   onChange,
 }) => {
-  const palette = PALETTE_PRESETS[COLOR_MODE_ID].colors;
-
+  const safeOptions: ColorRulesTransformOptions = options ?? { colorRules: [] };
   return (
     <ColorRulesEditor
-      value={options.colorRules ?? []}
-      onChange={(colorRules) => onChange({ ...options, colorRules })}
-      palette={palette}
+      value={safeOptions.colorRules ?? []}
+      onChange={(colorRules) => onChange({ ...safeOptions, colorRules })}
+      palette={COLORRULES_PALETTE}
     />
   );
 };

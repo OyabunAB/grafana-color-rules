@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DataFrame, FieldType, DynamicConfigValue, FieldColorModeId, GrafanaTheme2 } from '@grafana/data';
-import { ColorRule } from './types';
+import { DataFrame, Field, FieldType, GrafanaTheme2 } from '@grafana/data';
+import { ColorRule, SeriesColorOverride, DEFAULT_DASH } from './types';
 
-// Matches Grafana's palette-classic-by-name hash so our Fixed colors produce
-// the same palette entry as Grafana's native name-based assignment would.
+// Matches Grafana's palette-classic-by-name hash algorithm so our Fixed colors
+// produce the same palette index as Grafana's native name-based assignment would.
 function hashString(s: string): number {
   let hash = 0;
   for (let i = 0; i < s.length; i++) {
@@ -25,13 +25,17 @@ function hashString(s: string): number {
   return Math.abs(hash);
 }
 
+function hashHsl(name: string, s: number, l: number): string {
+  return hslToHex(hashString(name) % 360, s, l);
+}
+
 function hslToHex(h: number, s: number, l: number): string {
-  const sl = s / 100;
-  const ll = l / 100;
-  const a = sl * Math.min(ll, 1 - ll);
+  const sNorm = s / 100;
+  const lNorm = l / 100;
+  const a = sNorm * Math.min(lNorm, 1 - lNorm);
   const channel = (n: number) => {
     const k = (n + h / 30) % 12;
-    const val = ll - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    const val = lNorm - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
     return Math.round(255 * val).toString(16).padStart(2, '0');
   };
   return `#${channel(0)}${channel(8)}${channel(4)}`;
@@ -60,68 +64,69 @@ function hexToHsl(hex: string): [number, number, number] {
   return [h * 360, s * 100, l * 100];
 }
 
-function resolveColor(
-  groupName: string,
-  palette: string[],
-  theme: GrafanaTheme2,
-  secondary: boolean
-): string {
-  const idx = hashString(groupName) % palette.length;
-  const entry = palette[idx];
+function isValidHex(s: string): boolean {
+  return /^#[0-9A-Fa-f]{6}$/.test(s);
+}
 
-  // If the palette entry is already a hex color, use it directly.
-  // Otherwise resolve via Grafana's theme (handles named colors like 'semi-dark-blue').
-  const baseHex = entry.startsWith('#') && entry.length >= 7
-    ? entry
-    : theme.visualization.getColorByName(entry);
+// Derive a slightly lighter, less saturated shade from a base hex color —
+// used to distinguish dashed (secondary) series from their solid counterparts
+// while keeping them visually related.
+function secondaryHex(hex: string): string {
+  const [h, s, l] = hexToHsl(hex);
+  return hslToHex(h, s * 0.9, Math.min(l + 8, 85));
+}
 
-  if (typeof baseHex === 'string' && baseHex.startsWith('#') && baseHex.length >= 7) {
-    const [h, s, l] = hexToHsl(baseHex);
-    return secondary
-      ? hslToHex(h, s * 0.9, Math.min(l + 8, 85))
-      : hslToHex(h, s, l);
+function resolveColor(groupName: string, palette: string[], theme: GrafanaTheme2, secondary: boolean): string {
+  const entry = palette[hashString(groupName) % palette.length];
+
+  const resolved = isValidHex(entry) ? entry : theme.visualization.getColorByName(entry);
+
+  // getColorByName may return rgba() strings or other non-hex formats.
+  // Only accept 6-digit hex; fall back to hash-based HSL otherwise.
+  if (isValidHex(resolved)) {
+    return secondary ? secondaryHex(resolved) : resolved;
   }
 
-  // Final fallback: pure HSL from hash
-  const hue = hashString(groupName) % 360;
-  return secondary ? hslToHex(hue, 55, 68) : hslToHex(hue, 70, 52);
+  return secondary ? hashHsl(groupName, 65, 60) : hashHsl(groupName, 70, 52);
+}
+
+export function resolveSeriesName(field: Field, frame?: DataFrame): string {
+  return field.config?.displayNameFromDS ?? field.config?.displayName ?? frame?.name ?? field.name;
 }
 
 export function groupNameToColor(
   groupName: string,
   theme: GrafanaTheme2,
   secondary = false,
-  overridePalette?: string[]
+  palette?: string[]
 ): string {
-  const palette = (overridePalette?.length ? overridePalette : null)
-    ?? theme?.visualization?.palette
-    ?? [];
-
-  if (!palette.length) {
-    const hue = hashString(groupName) % 360;
-  return secondary ? hslToHex(hue, 65, 60) : hslToHex(hue, 70, 52);
+  if (!palette?.length) {
+    return secondary ? hashHsl(groupName, 65, 60) : hashHsl(groupName, 70, 52);
   }
-
   return resolveColor(groupName, palette, theme, secondary);
-}
-
-export interface SeriesColorOverride {
-  seriesName: string;
-  color: string;
-  lineStyle?: 'solid' | 'dash';
-  dash?: [number, number];
-  fillOpacity?: number;
 }
 
 export function computeSeriesOverrides(
   frames: DataFrame[],
   rules: ColorRule[],
   theme: GrafanaTheme2,
-  overridePalette?: string[]
+  palette: string[]
 ): SeriesColorOverride[] {
-  const palette = (overridePalette?.length ? overridePalette : null)
-    ?? theme?.visualization?.palette
-    ?? [];
+  // Compile regexes once per call, not per field.
+  const compiledRules = rules.flatMap((rule) => {
+    if (!rule.namePattern) {
+      return [];
+    }
+    try {
+      return [{ rule, regex: new RegExp(rule.namePattern) }];
+    } catch {
+      return [];
+    }
+  });
+
+  if (!compiledRules.length) {
+    return [];
+  }
 
   const result: SeriesColorOverride[] = [];
 
@@ -131,23 +136,9 @@ export function computeSeriesOverrides(
         continue;
       }
 
-      // At transform time frame.name is null in the scenes pipeline; the Prometheus
-      // data source sets displayNameFromDS from legendFormat during query parsing.
-      const seriesName: string =
-        field.config?.displayNameFromDS ?? field.config?.displayName ?? frame.name ?? field.name;
+      const seriesName = resolveSeriesName(field, frame);
 
-      for (const rule of rules) {
-        if (!rule.namePattern) {
-          continue;
-        }
-
-        let regex: RegExp;
-        try {
-          regex = new RegExp(rule.namePattern);
-        } catch {
-          continue;
-        }
-
+      for (const { rule, regex } of compiledRules) {
         const match = seriesName.match(regex);
         if (!match) {
           continue;
@@ -159,23 +150,26 @@ export function computeSeriesOverrides(
         if (!rule.colorGroup) {
           colorGroupValue = match[0];
         } else if (/^\d+$/.test(rule.colorGroup)) {
-          colorGroupValue = match[parseInt(rule.colorGroup, 10)] ?? match[0];
+          colorGroupValue = match[parseInt(rule.colorGroup, 10)] ?? '';
         } else {
           colorGroupValue = groups[rule.colorGroup] ?? match[0];
         }
 
-        const baseColor = rule.color
+        if (!colorGroupValue) {
+          continue;
+        }
+
+        const baseColor = rule.color && isValidHex(rule.color)
           ? rule.color
-          : palette.length
-            ? resolveColor(colorGroupValue, palette, theme, false)
-            : (() => { const h = hashString(colorGroupValue) % 360; return hslToHex(h, 70, 52); })();
+          : groupNameToColor(colorGroupValue, theme, false, palette);
 
         const override: SeriesColorOverride = { seriesName, color: baseColor };
 
         for (const ls of rule.lineStyles ?? []) {
-          if (!ls.captureGroup || !ls.matchValue) {
+          if (ls.captureGroup === '' || !ls.matchValue) {
             continue;
           }
+
           const captureValue = /^\d+$/.test(ls.captureGroup)
             ? match[parseInt(ls.captureGroup, 10)]
             : groups[ls.captureGroup];
@@ -183,17 +177,14 @@ export function computeSeriesOverrides(
           if (captureValue === ls.matchValue) {
             override.lineStyle = ls.style;
             if (ls.style === 'dash') {
-              override.dash = ls.dash ?? [6, 3];
+              override.dash = ls.dash ?? DEFAULT_DASH;
               override.fillOpacity = ls.opacity ?? 0;
-              if (rule.color) {
-                const [h, s, l] = hexToHsl(rule.color);
-                override.color = hslToHex(h, s * 0.9, Math.min(l + 8, 85));
-              } else {
-                override.color = palette.length
-                  ? resolveColor(colorGroupValue, palette, theme, true)
-                  : (() => { const h = hashString(colorGroupValue) % 360; return hslToHex(h, 65, 60); })();
-              }
+              override.color = rule.color && isValidHex(rule.color)
+                ? secondaryHex(rule.color)
+                : groupNameToColor(colorGroupValue, theme, true, palette);
             }
+            // First matching line style rule wins.
+            break;
           }
         }
 
@@ -204,25 +195,4 @@ export function computeSeriesOverrides(
   }
 
   return result;
-}
-
-export function buildConfigProperties(override: SeriesColorOverride): DynamicConfigValue[] {
-  const props: DynamicConfigValue[] = [
-    {
-      id: 'color',
-      value: { mode: FieldColorModeId.Fixed, fixedColor: override.color },
-    },
-  ];
-
-  if (override.lineStyle === 'dash') {
-    props.push({
-      id: 'custom.lineStyle',
-      value: { fill: 'dash', dash: override.dash ?? [6, 3] },
-    });
-    if (override.fillOpacity !== undefined) {
-      props.push({ id: 'custom.fillOpacity', value: override.fillOpacity });
-    }
-  }
-
-  return props;
 }

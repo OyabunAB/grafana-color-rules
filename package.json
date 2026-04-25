@@ -1,14 +1,15 @@
 {
   "name": "color-rules",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
-    "test": "jest --watch --onlyChanged",
+    "test": "jest --passWithNoTests --maxWorkers 4",
+    "test:watch": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
     "lint": "eslint --cache .",
-    "lint:fix": "npm run lint -- --fix && prettier --write --list-different .",
+    "lint:fix": "npm run lint -- --fix && prettier --write .",
     "e2e": "playwright test",
     "server": "docker compose up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest"
@@ -16,7 +17,11 @@
   "author": "Daniel Sundberg, Oyabun AB",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@grafana/data": "^11.5.2",
+    "@grafana/data": "12.4.2",
+    "@grafana/i18n": "12.4.2",
+    "@grafana/runtime": "12.4.2",
+    "@grafana/schema": "12.4.2",
+    "@grafana/ui": "12.4.2",
     "@grafana/eslint-config": "^9.0.0",
     "@grafana/plugin-e2e": "^3.6.1",
     "@grafana/tsconfig": "^2.0.1",
@@ -67,11 +72,9 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@emotion/css": "11.10.6",
-    "@grafana/i18n": "12.4.2",
-    "@grafana/runtime": "12.4.2",
-    "@grafana/schema": "12.4.2",
-    "@grafana/ui": "12.4.2",
+    "@emotion/css": "11.10.6"
+  },
+  "peerDependencies": {
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },

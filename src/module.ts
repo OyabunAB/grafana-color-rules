@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { AppPlugin, fieldColorModeRegistry, standardTransformersRegistry } from '@grafana/data';
+import { AppPlugin, fieldColorModeRegistry, standardTransformersRegistry, FieldType } from '@grafana/data';
 import { config } from '@grafana/runtime';
 import { colorRulesTransformer } from './transformer';
 import { ColorRulesTransformEditor } from './components/TransformEditor';
-import { groupNameToColor } from './colorUtils';
-import { PALETTE_PRESETS } from './palettes';
-
-const COLOR_MODE_ID = 'colorrules';
+import { groupNameToColor, resolveSeriesName } from './colorUtils';
+import { COLOR_MODE_ID, COLORRULES_PALETTE } from './palettes';
 
 fieldColorModeRegistry.register({
   id: COLOR_MODE_ID,
@@ -28,11 +26,12 @@ fieldColorModeRegistry.register({
   isByValue: false,
   isContinuous: false,
   getCalculator: (field) => {
+    if (field.type === FieldType.time) {
+      return () => 'transparent';
+    }
     const theme = config.theme2;
-    const palette = PALETTE_PRESETS[COLOR_MODE_ID].colors;
-    const name: string =
-      field.config?.displayNameFromDS ?? field.config?.displayName ?? field.name;
-    const color = groupNameToColor(name, theme, false, palette);
+    const name = resolveSeriesName(field);
+    const color = groupNameToColor(name, theme, false, COLORRULES_PALETTE);
     return () => color;
   },
 });
@@ -43,8 +42,8 @@ standardTransformersRegistry.register({
   description: colorRulesTransformer.description,
   transformation: colorRulesTransformer,
   editor: ColorRulesTransformEditor,
-  imageDark: 'public/img/icn-transforms.svg',
-  imageLight: 'public/img/icn-transforms.svg',
 });
 
+// AppPlugin with no root component — this plugin registers only side effects:
+// a FieldColorMode and a DataTransformer. There is no plugin UI page.
 export const plugin = new AppPlugin();

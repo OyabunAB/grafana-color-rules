@@ -1,13 +1,13 @@
 {
-  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/v11.5.2/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
   "name": "Color Rules",
   "id": "oyabunab-color-rules-app",
   "info": {
     "keywords": ["app", "transform", "color"],
-    "description": "Registers a data transformer that assigns consistent colors to series using regex capture groups.",
+    "description": "Assigns consistent colors to series using regex capture groups.",
     "author": {
-      "name": "Daniel Sundberg, Oyabun AB"
+      "name": "Oyabun AB"
     },
     "logos": {
       "small": "img/logo.svg",
