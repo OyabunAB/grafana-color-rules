@@ -17,8 +17,6 @@ permissions:
 jobs:
   compare:
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
 
     steps:
       - name: Checkout repository

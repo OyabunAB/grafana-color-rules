@@ -14,8 +14,6 @@ jobs:
       id-token: write
       attestations: write
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
     steps:
       - uses: actions/checkout@v6
         with:

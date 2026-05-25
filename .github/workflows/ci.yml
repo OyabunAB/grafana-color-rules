@@ -14,8 +14,6 @@ jobs:
   build:
     name: Build, lint and unit tests
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
     permissions:
       contents: read
     outputs:
@@ -134,8 +132,6 @@ jobs:
   resolve-versions:
     name: Resolve e2e images
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
     permissions:
       contents: read
     timeout-minutes: 3
@@ -166,8 +162,6 @@ jobs:
         GRAFANA_IMAGE: ${{fromJson(needs.resolve-versions.outputs.matrix)}}
     name: e2e test ${{ matrix.GRAFANA_IMAGE.name }}@${{ matrix.GRAFANA_IMAGE.VERSION }}
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -243,8 +237,6 @@ jobs:
       pull-requests: write
     needs: [playwright-tests]
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
     steps:
       - uses: actions/checkout@v6
         with:

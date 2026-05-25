@@ -13,8 +13,6 @@ on:
 jobs:
   release:
     runs-on: oybn-kubernetes-pod
-    container:
-      image: ghcr.io/actions/actions-runner:latest
     steps:
       - uses: grafana/plugin-actions/create-plugin-update@create-plugin-update/v2.0.2
         with:
